@@ -16,17 +16,26 @@ interface FormErrors {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState<LoginForm>({ email: '', password: '' });
+  const [form, setForm] = useState<LoginForm>({
+    email: '',
+    password: '',
+  });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (isAuthenticated) {
+    navigate('/dashboard');
+  }
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!form.email) {
       newErrors.email = 'Email is required';
-    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(form.email)) {
+    } else if (
+      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(form.email)
+    ) {
       newErrors.email = 'Invalid email address';
     }
     if (!form.password) {
@@ -40,7 +49,11 @@ export default function LoginPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: undefined, general: undefined });
+    setErrors({
+      ...errors,
+      [e.target.name]: undefined,
+      general: undefined,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,11 +62,12 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       const response = await api.post('/auth/login', form);
-      login(response.data.token);
+      login(response.data.token, response.data.user);
       navigate('/dashboard');
     } catch (err: any) {
       setErrors({
-        general: err.response?.data?.message || 'Invalid email or password'
+        general:
+          err.response?.data?.message || 'Invalid email or password',
       });
     } finally {
       setIsSubmitting(false);
@@ -62,11 +76,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div className="bg-white border border-gray-200 rounded-xl p-8 w-full max-w-md">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 w-full max-w-md">
 
         {/* Logo */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-9 h-9 bg-blue-700 rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
@@ -75,25 +89,33 @@ export default function LoginPage() {
             </svg>
           </div>
           <div>
-            <div className="text-sm font-medium text-gray-900">HRM Portal</div>
-            <div className="text-xs text-gray-400">Human Resource Management</div>
+            <div className="text-sm font-medium text-white">
+              HRM Portal
+            </div>
+            <div className="text-xs text-zinc-500">
+              Human Resource Management
+            </div>
           </div>
         </div>
 
-        <h1 className="text-xl font-medium text-gray-900">Welcome back</h1>
-        <p className="text-sm text-gray-500 mt-1 mb-6">
+        <h1 className="text-xl font-medium text-white">
+          Welcome back
+        </h1>
+        <p className="text-sm text-zinc-400 mt-1 mb-6">
           Sign in to your admin account to continue
         </p>
 
-        <hr className="border-gray-100 mb-5" />
+        <hr className="border-zinc-800 mb-5" />
 
         {/* General Error */}
         {errors.general && (
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 mb-4">
+          <div className="flex items-center gap-2 bg-red-950 border border-red-800 rounded-lg px-3 py-2.5 mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <p className="text-sm text-red-600">{errors.general}</p>
+            <p className="text-sm text-red-400">{errors.general}</p>
           </div>
         )}
 
@@ -101,7 +123,7 @@ export default function LoginPage() {
 
           {/* Email */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">
               Email address
             </label>
             <div className="relative">
@@ -111,29 +133,26 @@ export default function LoginPage() {
                 value={form.email}
                 onChange={handleChange}
                 placeholder="admin@hrm.com"
-                className={`w-full px-3 py-2.5 pr-9 text-sm border rounded-lg outline-none transition-all
+                className={`w-full px-3 py-2.5 pr-9 text-sm rounded-lg outline-none transition-all
+                  bg-zinc-800 text-white placeholder-zinc-600
                   ${errors.email
-                    ? 'border-red-400 focus:ring-2 focus:ring-red-100'
-                    : 'border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+                    ? 'border border-red-500 focus:ring-2 focus:ring-red-900'
+                    : 'border border-zinc-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-900'
                   }`}
               />
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 absolute right-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-zinc-600 absolute right-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
               </svg>
             </div>
             {errors.email && (
-              <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                {errors.email}
-              </p>
+              <p className="text-xs text-red-400 mt-1">{errors.email}</p>
             )}
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">
               Password
             </label>
             <div className="relative">
@@ -143,16 +162,17 @@ export default function LoginPage() {
                 value={form.password}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className={`w-full px-3 py-2.5 pr-9 text-sm border rounded-lg outline-none transition-all
+                className={`w-full px-3 py-2.5 pr-9 text-sm rounded-lg outline-none transition-all
+                  bg-zinc-800 text-white placeholder-zinc-600
                   ${errors.password
-                    ? 'border-red-400 focus:ring-2 focus:ring-red-100'
-                    : 'border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+                    ? 'border border-red-500 focus:ring-2 focus:ring-red-900'
+                    : 'border border-zinc-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-900'
                   }`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400"
               >
                 {showPassword ? (
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -162,18 +182,14 @@ export default function LoginPage() {
                   </svg>
                 ) : (
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
                   </svg>
                 )}
               </button>
             </div>
             {errors.password && (
-              <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                {errors.password}
-              </p>
+              <p className="text-xs text-red-400 mt-1">{errors.password}</p>
             )}
           </div>
 
@@ -181,7 +197,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-blue-700 hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 mt-2"
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 mt-2"
           >
             {isSubmitting ? (
               <>
@@ -198,7 +214,7 @@ export default function LoginPage() {
 
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-5">
+        <p className="text-center text-xs text-zinc-600 mt-5">
           Only authorized HR personnel can access this portal.
         </p>
 

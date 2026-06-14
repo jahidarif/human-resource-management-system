@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { pool } from './db';
 import authRoutes from './routes/authRoutes';
 import attendanceRoutes from './routes/attendanceRoutes';
+import employeeRoutes from './routes/employeeRoutes';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(cors({
 app.use(express.json());
 
 app.use('/auth', authRoutes);
+app.use('/employees', employeeRoutes);
 app.use('/attendance', attendanceRoutes);
 
 app.get('/health', async (req, res) => {
