@@ -1,7 +1,9 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import type { SignOptions } from 'jsonwebtoken';
 import { pool } from '../db';
-import { mapUser, UserPublic } from '../models/User';
+import { mapUser } from '../models/User';
+import type { UserPublic } from '../models/User';
 
 interface LoginResult {
   token: string;
@@ -29,10 +31,15 @@ export async function loginUser(
   }
 
   const secret = process.env.JWT_SECRET!;
+
+  const options: SignOptions = {
+    expiresIn: (process.env.JWT_EXPIRES_IN || '8h') as SignOptions['expiresIn'],
+  };
+
   const token = jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     secret,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
+    options
   );
 
   return {
