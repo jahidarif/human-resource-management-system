@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 interface Employee {
   id: number;
@@ -19,6 +20,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -26,23 +28,28 @@ export default function DashboardPage() {
   }, []);
 
   const fetchEmployees = async () => {
+    setLoading(true);
+    setError('');
     try {
       const response = await api.get('/employees');
       setEmployees(response.data.data);
-    } catch (err: any) {
-      setError('Failed to load employees');
+    } catch {
+      setError('Failed to load employees. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: number) => {
+    setDeleting(true);
     try {
       await api.delete(`/employees/${id}`);
       setEmployees(prev => prev.filter(e => e.id !== id));
       setDeleteId(null);
-    } catch (err: any) {
+    } catch {
       setError('Failed to delete employee');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -55,17 +62,18 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-black">
       <Navbar />
-
       <div className="max-w-7xl mx-auto px-4 py-6">
 
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-medium text-white">
               Employees
             </h1>
             <p className="text-xs text-zinc-500 mt-0.5">
-              {employees.length} total employees
+              {loading
+                ? 'Loading...'
+                : `${employees.length} total employees`
+              }
             </p>
           </div>
           <button
@@ -76,33 +84,33 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Search */}
         <div className="mb-4">
           <input
             type="text"
             placeholder="Search by name, email or role..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full md:w-80 px-3 py-2 text-sm bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-600 outline-none focus:border-blue-500"
+            className="w-full md:w-80 px-3 py-2 text-sm bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-600 outline-none focus:border-blue-500 transition-colors"
           />
         </div>
 
-        {/* Error */}
         {error && (
-          <div className="mb-4 p-3 bg-red-950 border border-red-800 rounded-lg">
+          <div className="mb-4 p-3 bg-red-950 border border-red-800 rounded-lg flex items-center justify-between">
             <p className="text-sm text-red-400">{error}</p>
+            <button
+              onClick={fetchEmployees}
+              className="text-xs text-red-400 hover:text-red-300 underline"
+            >
+              Retry
+            </button>
           </div>
         )}
 
-        {/* Loading */}
-        {loading && (
-          <div className="text-center py-12">
-            <p className="text-zinc-500 text-sm">Loading employees...</p>
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <LoadingSpinner size="lg" text="Loading employees..." />
           </div>
-        )}
-
-        {/* Table */}
-        {!loading && (
+        ) : (
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead className="border-b border-zinc-800">
@@ -120,29 +128,26 @@ export default function DashboardPage() {
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center py-12 text-zinc-600 text-sm">
-                      No employees found
+                      {search
+                        ? 'No employees match your search'
+                        : 'No employees found'
+                      }
                     </td>
                   </tr>
                 ) : (
                   filtered.map(emp => (
                     <tr key={emp.id} className="hover:bg-zinc-800 transition-colors">
-                      <td className="px-4 py-3 text-zinc-500 text-xs">
-                        #{emp.id}
-                      </td>
+                      <td className="px-4 py-3 text-zinc-500 text-xs">#{emp.id}</td>
                       <td className="px-4 py-3 font-medium text-white">
                         {emp.firstName} {emp.lastName}
                       </td>
-                      <td className="px-4 py-3 text-zinc-400">
-                        {emp.email}
-                      </td>
+                      <td className="px-4 py-3 text-zinc-400">{emp.email}</td>
                       <td className="px-4 py-3">
                         <span className="bg-zinc-800 text-zinc-300 text-xs px-2 py-1 rounded-md">
                           {emp.role}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-zinc-400">
-                        {emp.hireDate}
-                      </td>
+                      <td className="px-4 py-3 text-zinc-400">{emp.hireDate}</td>
                       <td className="px-4 py-3 text-zinc-400">
                         ${emp.salary.toLocaleString()}
                       </td>
@@ -177,7 +182,6 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
       {deleteId && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-sm">
@@ -185,21 +189,30 @@ export default function DashboardPage() {
               Delete Employee
             </h2>
             <p className="text-sm text-zinc-400 mb-6">
-              Are you sure you want to delete this employee?
-              This will also delete all their attendance records.
+              Are you sure? This will permanently delete the
+              employee and all their attendance records.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteId(null)}
-                className="flex-1 px-4 py-2 text-sm border border-zinc-700 text-zinc-400 rounded-lg hover:bg-zinc-800 transition-colors"
+                disabled={deleting}
+                className="flex-1 px-4 py-2 text-sm border border-zinc-700 text-zinc-400 rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(deleteId)}
-                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                disabled={deleting}
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
               >
-                Delete
+                {deleting ? (
+                  <>
+                    <LoadingSpinner size="sm" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
               </button>
             </div>
           </div>

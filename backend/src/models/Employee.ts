@@ -17,9 +17,15 @@ export function mapEmployee(row: any): Employee {
     lastName: String(row.last_name),
     email: String(row.email),
     role: String(row.role),
-    hireDate: String(row.hire_date),
+    hireDate: row.hire_date
+      ? new Date(row.hire_date).toISOString().split('T')[0]
+      : '',
     salary: Number(row.salary),
-    createdAt: String(row.created_at),
-    updatedAt: String(row.updated_at),
+    createdAt: row.created_at
+      ? new Date(row.created_at).toISOString().split('T')[0]
+      : '',
+    updatedAt: row.updated_at
+      ? new Date(row.updated_at).toISOString().split('T')[0]
+      : '',
   };
 }

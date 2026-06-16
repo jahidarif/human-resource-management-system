@@ -12,7 +12,9 @@ export function mapAttendance(row: any): Attendance {
   return {
     id: Number(row.id),
     employeeId: Number(row.employee_id),
-    date: String(row.date),
+    date: row.date
+      ? new Date(row.date).toISOString().split('T')[0]
+      : '',
     status: row.status as AttendanceStatus,
     employeeName: row.first_name
       ? `${row.first_name} ${row.last_name}`

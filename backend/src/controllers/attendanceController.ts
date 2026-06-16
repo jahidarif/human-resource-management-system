@@ -1,5 +1,5 @@
-import { Response } from 'express';
-import { AuthRequest } from '../types';
+import type { Response } from 'express';
+import type { AuthRequest } from '../types';
 import {
   getAttendanceByEmployeeAndMonth,
   upsertAttendance,
@@ -18,9 +18,10 @@ export async function getAttendance(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
-  const employeeId = parseInt(req.params['employeeId'] as string, 10);
+  const { employeeId } = req.params;
+  const id = parseInt(employeeId as string, 10);
 
-  if (isNaN(employeeId) || employeeId <= 0) {
+  if (isNaN(id) || id <= 0) {
     res.status(400).json({ message: 'Invalid employee ID' });
     return;
   }
@@ -40,11 +41,12 @@ export async function getAttendance(
 
   try {
     const result = await getAttendanceByEmployeeAndMonth(
-      employeeId,
+      id,
       Number(value.year),
       Number(value.month),
       FIRST_DAY_OF_MONTH
     );
+    // result now includes hireDate and message if not hired
     res.status(200).json(result);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -80,6 +82,9 @@ export async function markAttendance(
       data: result,
     });
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    // catches hire date violation error
+    res.status(400).json({
+      message: err.message,
+    });
   }
 }
